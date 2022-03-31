@@ -72,6 +72,11 @@ func (p Plugin) Exec() error {
 		return err
 	}
 
+	// Register Raymond helpers
+	raymond.RegisterHelper("toLower", func(input string) string {
+		return strings.ToLower(input)
+	})
+
 	// Parse template
 	templateYaml, err := raymond.Render(string(raw), ctx)
 	if err != nil {
