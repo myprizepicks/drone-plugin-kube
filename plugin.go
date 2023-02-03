@@ -77,65 +77,71 @@ func (p Plugin) Exec() error {
 		return strings.ToLower(input)
 	})
 
-	// Parse template
-	templateYaml, err := raymond.Render(string(raw), ctx)
-	if err != nil {
-		return err
-	}
+	// Handle multiple templates in a single file
+	templates := strings.Split(string(raw), "\n---\n")
 
-	// Connect to Kubernetes
-	clientset, err := p.CreateKubeClient()
-	if err != nil {
-		return err
-	}
-
-	// Decode
-	kubernetesObject, _, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(templateYaml), nil, nil)
-	if err != nil {
-		log.Print("⛔️ Error decoding template into valid Kubernetes object:")
-		return err
-	}
-
-	switch o := kubernetesObject.(type) {
-	case *appV1.Deployment:
-		log.Print("📦 Resource type: Deployment")
-		if p.KubeConfig.Namespace == "" {
-			p.KubeConfig.Namespace = o.Namespace
-		}
-
-		err = CreateOrUpdateDeployment(clientset, p.KubeConfig.Namespace, o)
+	for _, template := range templates {
+		t := template
+		// Parse template
+		templateYaml, err := raymond.Render(t, ctx)
 		if err != nil {
 			return err
 		}
 
-		// Watch for successful update
-		log.Print("📦 Watching deployment until no unavailable replicas.")
-		state, watchErr := waitUntilDeploymentSettled(clientset, p.KubeConfig.Namespace, o.ObjectMeta.Name, 120)
-		log.Printf("%s", state)
-		return watchErr
-	case *coreV1.ConfigMap:
-		if p.KubeConfig.Namespace == "" {
-			p.KubeConfig.Namespace = o.Namespace
+		// Connect to Kubernetes
+		clientset, err := p.CreateKubeClient()
+		if err != nil {
+			return err
 		}
 
-		log.Print("📦 Resource type: ConfigMap")
-		err = ApplyConfigMapFromFile(clientset, p.KubeConfig.Namespace, o, p.ConfigMapFile)
-	case *coreV1.Service:
-		if p.KubeConfig.Namespace == "" {
-			p.KubeConfig.Namespace = o.Namespace
+		// Decode
+		kubernetesObject, _, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(templateYaml), nil, nil)
+		if err != nil {
+			log.Print("⛔️ Error decoding template into valid Kubernetes object:")
+			return err
 		}
 
-		log.Print("Resource type: Service")
-		err = ApplyService(clientset, p.KubeConfig.Namespace, o)
-	case *v1BetaV1.Ingress:
-		if p.KubeConfig.Namespace == "" {
-			p.KubeConfig.Namespace = o.Namespace
-		}
+		switch o := kubernetesObject.(type) {
+		case *appV1.Deployment:
+			log.Print("📦 Resource type: Deployment")
+			if p.KubeConfig.Namespace == "" {
+				p.KubeConfig.Namespace = o.Namespace
+			}
 
-		log.Print("Resource type: Ingress")
-		err = ApplyIngress(clientset, p.KubeConfig.Namespace, o)
-	default:
-		return errors.New("⛔️ This plugin doesn't support that resource type")
+			err = CreateOrUpdateDeployment(clientset, p.KubeConfig.Namespace, o)
+			if err != nil {
+				return err
+			}
+
+			// Watch for successful update
+			log.Print("📦 Watching deployment until no unavailable replicas.")
+			state, watchErr := waitUntilDeploymentSettled(clientset, p.KubeConfig.Namespace, o.ObjectMeta.Name, 120)
+			log.Printf("%s", state)
+			return watchErr
+		case *coreV1.ConfigMap:
+			if p.KubeConfig.Namespace == "" {
+				p.KubeConfig.Namespace = o.Namespace
+			}
+
+			log.Print("📦 Resource type: ConfigMap")
+			err = ApplyConfigMapFromFile(clientset, p.KubeConfig.Namespace, o, p.ConfigMapFile)
+		case *coreV1.Service:
+			if p.KubeConfig.Namespace == "" {
+				p.KubeConfig.Namespace = o.Namespace
+			}
+
+			log.Print("Resource type: Service")
+			err = ApplyService(clientset, p.KubeConfig.Namespace, o)
+		case *v1BetaV1.Ingress:
+			if p.KubeConfig.Namespace == "" {
+				p.KubeConfig.Namespace = o.Namespace
+			}
+
+			log.Print("Resource type: Ingress")
+			err = ApplyIngress(clientset, p.KubeConfig.Namespace, o)
+		default:
+			return errors.New("⛔️ This plugin doesn't support that resource type")
+		}
 	}
 	return err
 }
