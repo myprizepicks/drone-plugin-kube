@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible
-	github.com/gogo/protobuf v1.2.2-0.20190818160850-4c00d2f19fb9 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/json-iterator/go v1.1.7 // indirect
 	github.com/spf13/pflag v1.0.3 // indirect
 	google.golang.org/appengine v1.6.2-0.20190801181406-fb139bde60fa // indirect
