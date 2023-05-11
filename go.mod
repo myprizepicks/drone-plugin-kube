@@ -8,9 +8,8 @@ require (
 	github.com/json-iterator/go v1.1.7 // indirect
 	github.com/spf13/pflag v1.0.3 // indirect
 	google.golang.org/appengine v1.6.2-0.20190801181406-fb139bde60fa // indirect
-	gopkg.in/yaml.v2 v2.2.2 // indirect
 	k8s.io/api v0.0.0-20190819141258-3544db3b9e44
-	k8s.io/apimachinery v0.0.0-20190817020851-f2f3a405f61d
+	k8s.io/apimachinery v0.15.7
 	k8s.io/client-go v0.0.0-20190819141724-e14f31a72a77
 	k8s.io/klog v0.4.0 // indirect
 )
